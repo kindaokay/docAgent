@@ -1,0 +1,57 @@
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+logs/
+
+# Docker / 环境变量（真实密钥不入库）
+.env
+
+# 本地覆盖配置（真实密码，不入库）
+application-local.yaml
+application-local.yml
+
+### Agent ###
+cookasyncagent/
+**/dependency-reduced-pom.xml
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+*.log
+*.hprof
+.flattened-pom.xml
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode
+.qoder
+.cursor
+.trae
+.codex
+.claude
+.agents
+CLAUDE.md
+AGENTS.md
+
+document

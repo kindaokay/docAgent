@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.javaup</groupId>
+        <artifactId>ai-example</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+
+    <artifactId>ai-example-rag</artifactId>
+    <packaging>pom</packaging>
+
+    <name>ai-example-rag</name>
+    <description>ai的rag示例</description>
+
+    <modules>
+        <module>ai-example-spring-ai-rag</module>
+        <module>ai-example-spring-ai-rag-pg</module>
+        <module>ai-example-spring-ai-rag-pg-es</module>
+        <module>ai-example-demo-rag</module>
+        <module>ai-example-spring-ai-rag-milvus</module>
+        <module>ai-example-spring-ai-rag-neo4j</module>
+    </modules>
+</project>

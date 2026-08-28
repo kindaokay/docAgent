@@ -1,0 +1,57 @@
+server:
+  port: 7091
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: ai-example-spring-ai-office-mcp-client
+  ai:
+    openai:
+      base-url: https://api.siliconflow.cn
+      api-key: ${SILICONFLOW_API_KEY}
+      chat:
+        options:
+          model: deepseek-ai/DeepSeek-V3.2
+          extra-body:
+            enable_thinking: false
+          temperature: 0.2
+    mcp:
+      client:
+        enabled: true
+        name: office-tools-client
+        version: 1.0.0
+        # 同步模式
+        type: SYNC
+        request-timeout: 60s
+          
+        # Stdio方式连接的Server
+#        stdio:
+#          connections:
+#            local-tools:
+#              command: java
+#              args:
+#                - "-jar"
+#                - "/path/to/local-mcp-server.jar"
+        # Streamable HTTP方式连接的Server
+        streamable-http:
+          connections:
+            office-tools:
+              url: http://localhost:7090
+              endpoint: /mcp    
+  main:
+    allow-bean-definition-overriding: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+    servlet:
+      load-on-startup: 1
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+logging:
+  level:
+    org.springframework.ai: DEBUG

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  仅用于 Docker 镜像内的 Maven 构建：把 central 镜像到阿里云，加速国内拉取依赖。
+  如果遇到个别依赖（如 spring-ai-alibaba）在镜像仓库缺失导致构建失败，
+  可暂时注释掉 <mirrors> 整块，改用官方 central 重试。
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <mirrors>
+        <mirror>
+            <id>aliyun-central</id>
+            <name>Aliyun Central Mirror</name>
+            <url>https://maven.aliyun.com/repository/central</url>
+            <mirrorOf>central</mirrorOf>
+        </mirror>
+    </mirrors>
+</settings>

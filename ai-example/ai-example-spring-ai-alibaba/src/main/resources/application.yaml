@@ -1,0 +1,52 @@
+server:
+  port: 7089
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: ai-example-spring-ai-alibaba
+  ai:
+    openai:
+      base-url: https://api.siliconflow.cn
+      api-key: ${SILICONFLOW_API_KEY}
+      chat:
+        options:
+          model: Qwen/Qwen3.5-122B-A10B
+  main:
+    allow-bean-definition-overriding: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+    servlet:
+      load-on-startup: 1
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+
+logging:
+  level:
+    org.springframework.ai: DEBUG
+    com.alibaba.cloud.ai: DEBUG
+
+management:
+  metrics:
+    tags:
+      application: ai-example-spring-ai-alibaba
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  health:
+    elasticsearch:
+      enabled: false
+  prometheus:
+    metrics:
+      export:
+        enabled: true

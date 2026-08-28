@@ -1,0 +1,64 @@
+### 问题改写 Demo 调用示例
+### 启动模块后访问，默认端口为 7092
+### 如果你的 OpenAI 兼容网关不是 DeepSeek，请在 JSON 中传 chatModel 覆盖默认值
+
+### 1. 只看“问题改写 + 检索命中”
+POST http://localhost:7092/rag/question-rewrite/preview
+Content-Type: application/json
+
+{
+  "question": "那它更适合什么时候用？",
+  "history": [
+    {
+      "role": "user",
+      "content": "Spring AI RAG 里的问题改写是干什么的？"
+    },
+    {
+      "role": "assistant",
+      "content": "问题改写会把代词化、口语化、上下文省略的问题，改写成更适合检索的完整问题。"
+    }
+  ],
+  "topK": 3,
+  "similarityThreshold": 0.15
+}
+
+### 2. 执行完整链路：问题改写 + 检索增强 + 回答生成
+POST http://localhost:7092/rag/question-rewrite/ask
+Content-Type: application/json
+
+{
+  "question": "那它和 MultiQueryExpander 有什么区别？",
+  "history": [
+    {
+      "role": "user",
+      "content": "我在看 Spring AI 的检索增强能力。"
+    },
+    {
+      "role": "assistant",
+      "content": "常见能力包括问题改写、MultiQueryExpander、查询压缩和检索增强顾问。"
+    },
+    {
+      "role": "user",
+      "content": "问题改写具体是做什么的？"
+    },
+    {
+      "role": "assistant",
+      "content": "它会把当前问题改写成更适合检索系统理解的 query。"
+    }
+  ],
+  "topK": 4,
+  "similarityThreshold": 0.15
+}
+
+### 3. 显式指定 chatModel，适配别的 OpenAI 兼容模型网关
+POST http://localhost:7092/rag/question-rewrite/ask
+Content-Type: application/json
+
+{
+  "question": "如果我的知识库底层是向量数据库，问题改写为什么会更有帮助？",
+  "chatModel": "Qwen/Qwen3.5-14B-Instruct",
+  "targetSearchSystem": "向量数据库",
+  "history": [],
+  "topK": 4,
+  "similarityThreshold": 0.1
+}

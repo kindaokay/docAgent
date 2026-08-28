@@ -1,0 +1,43 @@
+server:
+  port: 7093
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: ai-example-spring-ai-rag-pg
+  datasource:
+    url: jdbc:postgresql://localhost:5432/medical_kb
+    username: postgres
+    password: postgres
+  ai:
+    openai:
+      base-url: https://api.siliconflow.cn
+      api-key: ${SILICONFLOW_API_KEY}
+      embedding:
+        options:
+          model: Qwen/Qwen3-Embedding-8B
+          dimensions: 1024
+    vectorstore:
+      pgvector:
+        index-type: hnsw
+        distance-type: COSINE_DISTANCE
+        dimensions: 1024
+        initialize-schema: true
+  main:
+    allow-bean-definition-overriding: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+    servlet:
+      load-on-startup: 1
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+
+logging:
+  level:
+    org.springframework.ai: DEBUG

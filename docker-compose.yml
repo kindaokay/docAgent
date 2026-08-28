@@ -1,0 +1,41 @@
+# 部署前先复制环境变量模板并填好 API Key：
+#   cp .env.example .env
+#
+# 中间件（MySQL/Redis/Kafka/MinIO/PG+pgvector/ES/Neo4j）跑在宿主机（本 VM）上，
+# 后端容器通过 host.docker.internal 访问它们，不随 compose 一起编排。
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: nexus-agent-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    extra_hosts:
+      # 让容器内可用 host.docker.internal 指向宿主机（本 VM 上的中间件）
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # 持久化 log4j2 落盘日志（相对仓库根目录的 logs/）
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9082/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    # 默认不暴露后端端口，仅由前端 nginx 内部反代；调试需要直连时放开下面两行
+    # ports:
+    #   - "9082:9082"
+
+  frontend:
+    build:
+      context: ./vue
+      dockerfile: Dockerfile.frontend
+    container_name: nexus-agent-frontend
+    restart: unless-stopped
+    ports:
+      # 对外唯一入口；如需换端口改成 "8080:80"
+      - "80:80"
+    depends_on:
+      - backend

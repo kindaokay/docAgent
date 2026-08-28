@@ -1,0 +1,58 @@
+server:
+  port: 7089
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: ai-example-spring-ai
+  ai:
+    openai:
+      base-url: https://api.siliconflow.cn
+      api-key: ${SILICONFLOW_API_KEY}
+      chat:
+        options:
+          model: Qwen/Qwen3.5-397B-A17B
+  main:
+    allow-bean-definition-overriding: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+    servlet:
+      load-on-startup: 1
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+
+app:
+  ai:
+    chat:
+      default-system-prompt: >-
+        你是一名友好的 Spring AI 入门助手，负责帮助用户快速了解 Spring AI、Java 和大模型开发基础。
+        回答尽量清晰、准确、结构化；如果用户追问代码细节，优先结合 Spring Boot 场景解释。
+
+logging:
+  level:
+    org.springframework.ai: DEBUG
+
+management:
+  metrics:
+    tags:
+      application: ai-example-spring-ai
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  health:
+    elasticsearch:
+      enabled: false
+  prometheus:
+    metrics:
+      export:
+        enabled: true

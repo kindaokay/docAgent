@@ -1,0 +1,10 @@
+# 示例一项目
+server:
+  port: 8085
+
+spring:
+  application:
+    name: ai-example-one
+  main:
+    # 使用WebFlux支持SSE
+    web-application-type: reactive

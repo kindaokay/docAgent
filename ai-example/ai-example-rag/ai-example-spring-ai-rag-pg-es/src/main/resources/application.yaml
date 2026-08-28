@@ -1,0 +1,82 @@
+server:
+  port: 7095
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: ai-example-spring-ai-rag-pg-es
+  datasource:
+    url: jdbc:postgresql://localhost:5432/tech_kb
+    username: postgres
+    password: postgres
+  # Elasticsearch 连接配置
+  elasticsearch:
+    uris: http://localhost:9200
+    # 如果 ES 没开鉴权，这两个变量可以不配，Spring Boot 不会附带认证信息
+    username: elastic
+    password: elastic
+  ai:
+    openai:
+      base-url: https://api.siliconflow.cn
+      api-key: ${SILICONFLOW_API_KEY}
+      embedding:
+        options:
+          model: Qwen/Qwen3-Embedding-8B
+          dimensions: 1024
+    vectorstore:
+      pgvector:
+        index-type: hnsw
+        distance-type: COSINE_DISTANCE
+        dimensions: 1024
+        initialize-schema: true
+  main:
+    allow-bean-definition-overriding: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+    servlet:
+      load-on-startup: 1
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+
+# ===== 混合检索自定义配置 =====
+hybrid:
+  search:
+    # 启动时是否自动重建并导入演示数据
+    initialize-on-startup: true
+    # 自动初始化时是否先清空旧数据
+    reset-on-startup: true
+    # ES 索引名称
+    es-index-name: tech_knowledge
+    # ES 文本字段使用的分词器（需要 ES 安装 IK 分词插件，未安装可改为 standard）
+    es-analyzer: ik_max_word
+    # ES 搜索时使用的分词器
+    es-search-analyzer: ik_smart
+    # 向量检索召回数量
+    vector-top-k: 20
+    # 关键词检索召回数量
+    keyword-top-k: 20
+    # 向量检索相似度阈值
+    similarity-threshold: 0.3
+    # RRF 融合常数 K
+    rrf-k: 60
+    # 最终返回的文档数量
+    final-top-k: 5
+    # Spring AI PGVector 默认使用的底层表名
+    vector-table-name: vector_store
+
+# 关闭 ES 健康检查（避免启动时 ES 未启动导致报错）
+management:
+  health:
+    elasticsearch:
+      enabled: false
+
+logging:
+  level:
+    org.springframework.ai: DEBUG
+    org.javaup.ai: DEBUG

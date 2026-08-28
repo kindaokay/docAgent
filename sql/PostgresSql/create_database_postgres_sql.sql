@@ -1,0 +1,1 @@
+CREATE DATABASE nexus_agent_pgvector WITH ENCODING 'UTF8';

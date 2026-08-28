@@ -1,0 +1,2 @@
+org.javaup.config.SuperAgentCommonAutoConfig
+org.javaup.database.mybatisplus.MybatisPlusAutoConfiguration

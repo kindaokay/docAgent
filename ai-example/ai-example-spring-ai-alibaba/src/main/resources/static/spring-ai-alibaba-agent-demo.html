@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring AI Alibaba Agent Demo</title>
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700;800&display=swap");
+
+        :root {
+            --bg: #08111f;
+            --bg-soft: #0f1b31;
+            --panel: rgba(13, 24, 42, 0.9);
+            --panel-strong: rgba(10, 20, 36, 0.96);
+            --card: rgba(15, 27, 49, 0.82);
+            --line: rgba(148, 163, 184, 0.2);
+            --line-strong: rgba(56, 189, 248, 0.35);
+            --text: #e2e8f0;
+            --muted: #8aa0b8;
+            --success: #22c55e;
+            --success-deep: #16a34a;
+            --accent: #38bdf8;
+            --accent-deep: #0ea5e9;
+            --warning: #f59e0b;
+            --danger: #f87171;
+            --shadow: 0 24px 70px rgba(2, 8, 23, 0.45);
+            --radius-xl: 28px;
+            --radius-lg: 22px;
+            --radius-md: 16px;
+            --radius-sm: 12px;
+            --mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+            --sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            color-scheme: dark;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: var(--sans);
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(34, 197, 94, 0.16), transparent 26%),
+                radial-gradient(circle at top right, rgba(56, 189, 248, 0.18), transparent 32%),
+                linear-gradient(160deg, #060d19 0%, #091324 42%, #07111e 100%);
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent 90%);
+        }
+
+        .shell {
+            width: min(1240px, calc(100vw - 32px));
+            margin: 24px auto 40px;
+            display: grid;
+            gap: 20px;
+        }
+
+        .panel {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-xl);
+            background: var(--panel);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(16px);
+        }
+
+        .hero {
+            display: grid;
+            gap: 18px;
+            grid-template-columns: 1.3fr 0.9fr;
+            padding: 28px;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            right: -90px;
+            top: -90px;
+            width: 240px;
+            height: 240px;
+            border-radius: 28px;
+            transform: rotate(18deg);
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(34, 197, 94, 0.1));
+            border: 1px solid rgba(125, 211, 252, 0.15);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(34, 197, 94, 0.12);
+            color: #d1fae5;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .eyebrow::before {
+            content: "";
+            width: 9px;
+            height: 9px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--success), #86efac);
+            box-shadow: 0 0 14px rgba(34, 197, 94, 0.65);
+        }
+
+        h1 {
+            margin: 16px 0 10px;
+            font-size: clamp(32px, 4vw, 52px);
+            line-height: 1.04;
+            letter-spacing: -0.04em;
+        }
+
+        .lead {
+            max-width: 68ch;
+            margin: 0 0 20px;
+            color: var(--muted);
+            line-height: 1.8;
+            font-size: 16px;
+        }
+
+        .chip-row,
+        .metric-list,
+        .scenario-list,
+        .button-grid,
+        .response-grid,
+        .summary-metrics {
+            display: grid;
+            gap: 12px;
+        }
+
+        .chip-row {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+
+        .chip {
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 999px;
+            padding: 10px 14px;
+            background: rgba(148, 163, 184, 0.08);
+            font-size: 13px;
+            color: #d6e3f0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .hero-board {
+            display: grid;
+            gap: 14px;
+            align-content: start;
+            position: relative;
+            z-index: 1;
+        }
+
+        .board-card {
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            background: rgba(8, 17, 31, 0.58);
+            padding: 18px;
+        }
+
+        .board-title,
+        .section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .board-title h2,
+        .section-title h2,
+        .card-title {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .board-label {
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .metric-list {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .metric {
+            border-radius: var(--radius-md);
+            padding: 14px;
+            background: linear-gradient(180deg, rgba(15, 27, 49, 0.92), rgba(8, 17, 31, 0.86));
+            border: 1px solid rgba(148, 163, 184, 0.12);
+        }
+
+        .metric span {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .metric strong {
+            display: block;
+            font-size: 15px;
+            line-height: 1.6;
+            color: var(--text);
+        }
+
+        .layout {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: 1fr 0.96fr;
+        }
+
+        .workbench {
+            padding: 24px;
+        }
+
+        .section-subtitle {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.7;
+            font-size: 14px;
+        }
+
+        .control-panel,
+        .monitor-panel {
+            display: grid;
+            gap: 18px;
+            align-content: start;
+        }
+
+        .stack-card {
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            background: rgba(8, 17, 31, 0.55);
+            padding: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #cad7e5;
+            font-size: 14px;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: var(--radius-md);
+            background: rgba(8, 17, 31, 0.82);
+            color: var(--text);
+            font: inherit;
+            padding: 14px 16px;
+            outline: none;
+            transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+        }
+
+        textarea {
+            min-height: 140px;
+            resize: vertical;
+            line-height: 1.75;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: rgba(56, 189, 248, 0.55);
+            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.14);
+        }
+
+        .scenario-list {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        button {
+            border: none;
+            border-radius: 18px;
+            padding: 13px 16px;
+            font: inherit;
+            color: var(--text);
+            background: rgba(15, 27, 49, 0.98);
+            cursor: pointer;
+            transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease, opacity 180ms ease;
+            min-height: 48px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        button:focus-visible {
+            outline: 2px solid rgba(56, 189, 248, 0.7);
+            outline-offset: 2px;
+        }
+
+        .scenario {
+            text-align: left;
+            border: 1px solid rgba(148, 163, 184, 0.14);
+        }
+
+        .scenario strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .scenario span {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .button-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .action-button {
+            text-align: left;
+            border: 1px solid rgba(148, 163, 184, 0.14);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+        }
+
+        .action-button strong,
+        .action-button span {
+            display: block;
+        }
+
+        .action-button strong {
+            margin-bottom: 4px;
+            font-size: 15px;
+        }
+
+        .action-button span {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .action-button.primary {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(15, 27, 49, 0.95));
+            border-color: rgba(34, 197, 94, 0.34);
+        }
+
+        .action-button.secondary {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(15, 27, 49, 0.95));
+            border-color: rgba(56, 189, 248, 0.34);
+        }
+
+        .action-button.warning {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(15, 27, 49, 0.95));
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .action-button.ghost {
+            background: rgba(15, 27, 49, 0.68);
+        }
+
+        .status-box {
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            background: rgba(8, 17, 31, 0.75);
+            color: var(--muted);
+            line-height: 1.7;
+            min-height: 74px;
+        }
+
+        .status-box.live {
+            border-color: rgba(34, 197, 94, 0.3);
+            color: #dcfce7;
+            background: rgba(20, 83, 45, 0.18);
+        }
+
+        .status-box.error {
+            border-color: rgba(248, 113, 113, 0.35);
+            color: #fecaca;
+            background: rgba(127, 29, 29, 0.2);
+        }
+
+        .status-box.success {
+            border-color: rgba(56, 189, 248, 0.28);
+            color: #dbeafe;
+            background: rgba(8, 47, 73, 0.22);
+        }
+
+        .helper-list {
+            margin: 0;
+            padding-left: 18px;
+            color: var(--muted);
+            line-height: 1.9;
+            font-size: 14px;
+        }
+
+        .helper-list code,
+        .chip code,
+        .tip code {
+            font-family: var(--mono);
+            color: #d5f4ff;
+        }
+
+        .response-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            padding: 0 24px 24px;
+        }
+
+        .response-card {
+            display: grid;
+            gap: 14px;
+            align-content: start;
+            padding: 20px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            background: rgba(8, 17, 31, 0.58);
+        }
+
+        .code-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: rgba(56, 189, 248, 0.12);
+            color: #d2f0ff;
+            font-family: var(--mono);
+            font-size: 12px;
+        }
+
+        .result-box {
+            min-height: 220px;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            background: rgba(4, 11, 21, 0.78);
+            color: var(--text);
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .result-box.code {
+            font-family: var(--mono);
+            font-size: 13px;
+        }
+
+        .summary-metrics {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .summary-metric {
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            background: rgba(15, 27, 49, 0.72);
+        }
+
+        .summary-metric span {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .summary-metric strong {
+            display: block;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .log-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 10px;
+        }
+
+        .log-item {
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            border-radius: var(--radius-md);
+            background: rgba(4, 11, 21, 0.68);
+            padding: 14px;
+        }
+
+        .log-item strong,
+        .log-item span {
+            display: block;
+        }
+
+        .log-item strong {
+            margin-bottom: 4px;
+            color: #f8fafc;
+            font-size: 13px;
+            font-family: var(--mono);
+        }
+
+        .log-item span {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .tip {
+            padding: 15px 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            background: rgba(21, 128, 61, 0.12);
+            color: #dcfce7;
+            line-height: 1.75;
+            font-size: 14px;
+        }
+
+        @media (max-width: 1080px) {
+            .hero,
+            .layout,
+            .response-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .shell {
+                width: min(100vw - 24px, 1240px);
+                margin-top: 12px;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .shell {
+                width: min(100vw - 16px, 1240px);
+                gap: 14px;
+            }
+
+            .hero,
+            .workbench,
+            .response-grid {
+                padding: 18px;
+            }
+
+            .metric-list,
+            .scenario-list,
+            .button-grid,
+            .summary-metrics {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                letter-spacing: -0.02em;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation: none !important;
+                transition: none !important;
+                scroll-behavior: auto !important;
+            }
+        }
+    </style>
+</head>
+<body>
+<main class="shell">
+    <section class="panel hero">
+        <div>
+            <span class="eyebrow">04-框架实战快速上手专属演示页</span>
+            <h1>Spring AI Alibaba ReactAgent 联调控制台</h1>
+            <p class="lead">
+                这个页面专门服务于 <code>ai-example-spring-ai-alibaba</code> 模块，适合一边看文档一边验证
+                <code>simple_agent</code>、<code>order_assistant</code> 和 <code>order_summary_agent</code> 的实际调用效果。
+                你可以在同一页里直接测试同步问答、流式输出、结构化 JSON 以及会话记忆状态。
+            </p>
+            <div class="chip-row">
+                <div class="chip">模块：ai-example-spring-ai-alibaba</div>
+                <div class="chip">端口：7089</div>
+                <div class="chip">模型：DeepSeek · deepseek-chat</div>
+                <div class="chip">后端地址：http://localhost:7089</div>
+                <div class="chip">重点：Tools / Memory / Hook / Interceptor / OutputType</div>
+            </div>
+        </div>
+
+        <div class="hero-board">
+            <div class="board-card">
+                <div class="board-title">
+                    <h2>页面覆盖的接口</h2>
+                    <span class="board-label">Agent APIs</span>
+                </div>
+                <div class="metric-list">
+                    <div class="metric">
+                        <span>最简问答</span>
+                        <strong><code>/agent/hello</code></strong>
+                    </div>
+                    <div class="metric">
+                        <span>多轮对话</span>
+                        <strong><code>/agent/order/chat</code></strong>
+                    </div>
+                    <div class="metric">
+                        <span>流式输出</span>
+                        <strong><code>/agent/order/stream</code></strong>
+                    </div>
+                    <div class="metric">
+                        <span>结构化总结</span>
+                        <strong><code>/agent/order/summary</code></strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="board-card">
+                <div class="board-title">
+                    <h2>适合怎么讲解</h2>
+                    <span class="board-label">Teaching Flow</span>
+                </div>
+                <ol class="helper-list">
+                    <li>先点击“运行 simple_agent”，验证最小 Agent 只走模型调用。</li>
+                    <li>再用“订单同步对话”和“订单流式输出”观察工具调用与会话记忆。</li>
+                    <li>最后用“结构化总结”和“查看线程状态”串起 outputType 与 threadId。</li>
+                </ol>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel workbench">
+        <div class="layout">
+            <div class="control-panel">
+                <div class="section-title">
+                    <h2>输入区</h2>
+                    <span class="code-tag">Session + Question</span>
+                </div>
+
+                <div class="stack-card">
+                    <label for="sessionId">会话 ID（用于验证 Memory）</label>
+                    <input id="sessionId" type="text" value="demo-user-1001" autocomplete="off">
+                </div>
+
+                <div class="stack-card">
+                    <label for="question">问题内容</label>
+                    <textarea id="question">请先查询订单 ORD-1001，再告诉我是否支持退款，并给我下一步建议</textarea>
+                </div>
+
+                <div class="stack-card">
+                    <div class="section-title">
+                        <h2>快捷场景</h2>
+                        <span class="section-subtitle">一键填充文档里的典型问题</span>
+                    </div>
+                    <div class="scenario-list">
+                        <button class="scenario" type="button" data-question="你好，请介绍一下 Spring AI Alibaba ReactAgent 的作用">
+                            <strong>最简 Agent</strong>
+                            <span>对应 <code>/agent/hello</code>，先跑通最小链路。</span>
+                        </button>
+                        <button class="scenario" type="button" data-question="帮我查一下订单 ORD-1001 的状态，并告诉我物流单号">
+                            <strong>订单查询</strong>
+                            <span>观察工具调用返回的真实订单信息。</span>
+                        </button>
+                        <button class="scenario" type="button" data-question="我想申请 ORD-1001 的退款，原因是重复下单">
+                            <strong>退款申请</strong>
+                            <span>验证工具参数采集与退款处理逻辑。</span>
+                        </button>
+                        <button class="scenario" type="button" data-question="这个会话记住了什么，请总结一下">
+                            <strong>会话记忆</strong>
+                            <span>配合相同 <code>sessionId</code> 观察 Memory 生效。</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stack-card">
+                    <div class="section-title">
+                        <h2>接口动作</h2>
+                        <span class="section-subtitle">按教学顺序把五个入口串起来</span>
+                    </div>
+                    <div class="button-grid">
+                        <button id="runHello" class="action-button secondary" type="button">
+                            <strong>运行 simple_agent</strong>
+                            <span>GET <code>/agent/hello</code></span>
+                        </button>
+                        <button id="runChat" class="action-button primary" type="button">
+                            <strong>订单同步对话</strong>
+                            <span>GET <code>/agent/order/chat</code></span>
+                        </button>
+                        <button id="runStream" class="action-button primary" type="button">
+                            <strong>订单流式输出</strong>
+                            <span>GET <code>/agent/order/stream</code></span>
+                        </button>
+                        <button id="stopStream" class="action-button ghost" type="button" disabled>
+                            <strong>停止流式接收</strong>
+                            <span>中途终止当前 SSE 请求</span>
+                        </button>
+                        <button id="runSummary" class="action-button warning" type="button">
+                            <strong>结构化总结</strong>
+                            <span>GET <code>/agent/order/summary</code></span>
+                        </button>
+                        <button id="runThreadState" class="action-button ghost" type="button">
+                            <strong>查看线程状态</strong>
+                            <span>GET <code>/agent/order/thread-state</code></span>
+                        </button>
+                        <button id="resetThread" class="action-button ghost" type="button">
+                            <strong>重置当前会话</strong>
+                            <span>GET <code>/agent/order/reset-thread</code></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="monitor-panel">
+                <div class="section-title">
+                    <h2>讲解提示</h2>
+                    <span class="code-tag">Live Notes</span>
+                </div>
+
+                <div id="statusBox" class="status-box">
+                    页面已准备好。推荐顺序：先用 simple_agent，再测试 chat / stream，最后看 summary 和 thread-state。
+                </div>
+
+                <div class="stack-card">
+                    <div class="section-title">
+                        <h2>调试建议</h2>
+                        <span class="section-subtitle">配合文档一起演示更直观</span>
+                    </div>
+                    <ol class="helper-list">
+                        <li>如果流式窗口一块块连续出现文本，说明浏览器已经把 <code>text/event-stream</code> 正常消费了。</li>
+                        <li>连续用同一个 <code>sessionId</code> 提问两次，再点“查看线程状态”，可以直接看到 messageCount 增长。</li>
+                        <li>切换不同 <code>sessionId</code>，等于切换不同线程，会话历史不会串台。</li>
+                    </ol>
+                </div>
+
+                <div class="stack-card">
+                    <div class="section-title">
+                        <h2>最近请求</h2>
+                        <span class="section-subtitle">便于讲课时快速回看调用顺序</span>
+                    </div>
+                    <ul id="requestLog" class="log-list">
+                        <li class="log-item">
+                            <strong>等待第一次调用</strong>
+                            <span>点击左侧任意按钮后，这里会记录接口、结果和时间。</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="tip">
+                    如果你只想观察 SSE 的原始协议帧，直接访问 <code>/agent/order/stream</code> 即可。
+                    这个页面的意义，是把那一行行 <code>data:</code> 解析成连续文本，方便课程演示。
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="response-grid">
+        <article class="response-card panel">
+            <div class="section-title">
+                <h2>最简 / 同步文本响应</h2>
+                <span class="code-tag">/agent/hello · /agent/order/chat</span>
+            </div>
+            <div id="textOutput" class="result-box">点击“运行 simple_agent”或“订单同步对话”后，这里显示文本结果。</div>
+        </article>
+
+        <article class="response-card panel">
+            <div class="section-title">
+                <h2>流式响应窗口</h2>
+                <span class="code-tag">/agent/order/stream</span>
+            </div>
+            <div id="streamOutput" class="result-box">点击“订单流式输出”后，这里会像打字机一样持续追加文本。</div>
+        </article>
+
+        <article class="response-card panel">
+            <div class="section-title">
+                <h2>结构化总结</h2>
+                <span class="code-tag">/agent/order/summary</span>
+            </div>
+            <div class="summary-metrics">
+                <div class="summary-metric">
+                    <span>orderId</span>
+                    <strong id="summaryOrderId">尚未请求</strong>
+                </div>
+                <div class="summary-metric">
+                    <span>status</span>
+                    <strong id="summaryStatus">尚未请求</strong>
+                </div>
+                <div class="summary-metric">
+                    <span>canRefund</span>
+                    <strong id="summaryCanRefund">尚未请求</strong>
+                </div>
+                <div class="summary-metric">
+                    <span>nextAction</span>
+                    <strong id="summaryNextAction">尚未请求</strong>
+                </div>
+            </div>
+            <div id="summaryOutput" class="result-box code">点击“结构化总结”后，这里展示格式化 JSON。</div>
+        </article>
+
+        <article class="response-card panel">
+            <div class="section-title">
+                <h2>线程状态</h2>
+                <span class="code-tag">/agent/order/thread-state</span>
+            </div>
+            <div class="summary-metrics">
+                <div class="summary-metric">
+                    <span>threadId</span>
+                    <strong id="threadIdValue">尚未请求</strong>
+                </div>
+                <div class="summary-metric">
+                    <span>messageCount</span>
+                    <strong id="messageCountValue">尚未请求</strong>
+                </div>
+                <div class="summary-metric">
+                    <span>latestUserMessage</span>
+                    <strong id="latestUserMessageValue">尚未请求</strong>
+                </div>
+                <div class="summary-metric">
+                    <span>latestAssistantMessage</span>
+                    <strong id="latestAssistantMessageValue">尚未请求</strong>
+                </div>
+            </div>
+            <div id="threadStateOutput" class="result-box code">点击“查看线程状态”后，这里展示线程状态 JSON。</div>
+        </article>
+    </section>
+</main>
+
+<script>
+    const API_BASE_URL = "http://localhost:7089";
+    const sessionIdInput = document.getElementById("sessionId");
+    const questionInput = document.getElementById("question");
+    const statusBox = document.getElementById("statusBox");
+    const requestLog = document.getElementById("requestLog");
+    const textOutput = document.getElementById("textOutput");
+    const streamOutput = document.getElementById("streamOutput");
+    const summaryOutput = document.getElementById("summaryOutput");
+    const threadStateOutput = document.getElementById("threadStateOutput");
+    const stopStreamButton = document.getElementById("stopStream");
+    const scenarioButtons = document.querySelectorAll(".scenario");
+
+    const summaryFields = {
+        orderId: document.getElementById("summaryOrderId"),
+        status: document.getElementById("summaryStatus"),
+        canRefund: document.getElementById("summaryCanRefund"),
+        nextAction: document.getElementById("summaryNextAction")
+    };
+
+    const threadStateFields = {
+        threadId: document.getElementById("threadIdValue"),
+        messageCount: document.getElementById("messageCountValue"),
+        latestUserMessage: document.getElementById("latestUserMessageValue"),
+        latestAssistantMessage: document.getElementById("latestAssistantMessageValue")
+    };
+
+    const defaultMessages = {
+        hello: "你好，请介绍一下 Spring AI Alibaba ReactAgent 的作用",
+        chat: "帮我查一下订单 ORD-1001 的状态，并告诉我物流单号",
+        stream: "请先查询订单 ORD-1001，再告诉我是否支持退款，并给我下一步建议",
+        summary: "请先查询订单 ORD-1001，再用结构化 JSON 总结订单状态、是否可退款和下一步建议"
+    };
+
+    let currentController = null;
+
+    function buildApiUrl(path) {
+        return API_BASE_URL + path;
+    }
+
+    function getSessionId() {
+        return sessionIdInput.value.trim() || "demo-user-1001";
+    }
+
+    function buildFreshSessionId() {
+        return "demo-user-" + Date.now();
+    }
+
+    function getQuestion(fallback) {
+        return questionInput.value.trim() || fallback;
+    }
+
+    function setStatus(text, tone) {
+        statusBox.textContent = text;
+        statusBox.className = "status-box" + (tone ? " " + tone : "");
+    }
+
+    function addLog(endpoint, result, detail) {
+        if (requestLog.children.length === 1 && requestLog.firstElementChild && requestLog.firstElementChild.textContent.includes("等待第一次调用")) {
+            requestLog.innerHTML = "";
+        }
+
+        const item = document.createElement("li");
+        item.className = "log-item";
+
+        const title = document.createElement("strong");
+        title.textContent = endpoint;
+
+        const time = document.createElement("span");
+        time.textContent = "时间：" + new Date().toLocaleTimeString("zh-CN", { hour12: false });
+
+        const outcome = document.createElement("span");
+        outcome.textContent = "结果：" + result;
+
+        const extra = document.createElement("span");
+        extra.textContent = "说明：" + detail;
+
+        item.appendChild(title);
+        item.appendChild(time);
+        item.appendChild(outcome);
+        item.appendChild(extra);
+        requestLog.prepend(item);
+
+        while (requestLog.children.length > 6) {
+            requestLog.removeChild(requestLog.lastElementChild);
+        }
+    }
+
+    function updateStreamControls(isStreaming) {
+        stopStreamButton.disabled = !isStreaming;
+    }
+
+    function stopCurrentStream(silent) {
+        if (currentController) {
+            currentController.abort();
+            currentController = null;
+            updateStreamControls(false);
+            if (!silent) {
+                setStatus("已手动停止当前流式请求。", "success");
+                addLog("/agent/order/stream", "已停止", "用户主动终止了当前 SSE 请求。");
+            }
+        }
+    }
+
+    async function fetchTextResponse(url) {
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    Accept: "text/plain"
+                }
+            });
+            const text = await response.text();
+            if (!response.ok) {
+                throw createHttpError(response.status, url, text);
+            }
+            return text;
+        }
+        catch (error) {
+            if (error.url && error.responseBody !== undefined) {
+                throw error;
+            }
+            throw new Error(error.message + "，请求地址：" + url);
+        }
+    }
+
+    async function fetchJsonResponse(url) {
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    Accept: "application/json"
+                }
+            });
+            const text = await response.text();
+            if (!response.ok) {
+                throw createHttpError(response.status, url, text);
+            }
+            return text ? JSON.parse(text) : {};
+        }
+        catch (error) {
+            if (error.url && error.responseBody !== undefined) {
+                throw error;
+            }
+            throw new Error(error.message + "，请求地址：" + url);
+        }
+    }
+
+    function formatJson(data) {
+        return JSON.stringify(data, null, 2);
+    }
+
+    function updateSummaryFields(summary) {
+        summaryFields.orderId.textContent = summary.orderId || "无";
+        summaryFields.status.textContent = summary.status || "无";
+        summaryFields.canRefund.textContent = String(summary.canRefund);
+        summaryFields.nextAction.textContent = summary.nextAction || "无";
+    }
+
+    function updateThreadStateFields(state) {
+        threadStateFields.threadId.textContent = state.threadId || "无";
+        threadStateFields.messageCount.textContent = String(state.messageCount ?? 0);
+        threadStateFields.latestUserMessage.textContent = state.latestUserMessage || "无";
+        threadStateFields.latestAssistantMessage.textContent = state.latestAssistantMessage || "无";
+    }
+
+    function createHttpError(status, url, responseBody) {
+        const detail = responseBody ? " - " + responseBody.slice(0, 500) : "";
+        const error = new Error("HTTP " + status + detail + "，请求地址：" + url);
+        error.status = status;
+        error.url = url;
+        error.responseBody = responseBody || "";
+        return error;
+    }
+
+    function isCorruptedThreadError(error) {
+        const text = ((error && error.responseBody) || error.message || "").toLowerCase();
+        return text.includes("insufficient tool messages following tool_calls")
+            || text.includes("tool_call_id");
+    }
+
+    async function runHello() {
+        stopCurrentStream(true);
+        const question = getQuestion(defaultMessages.hello);
+        const url = buildApiUrl("/agent/hello?question=" + encodeURIComponent(question));
+        setStatus("正在调用 simple_agent...", "live");
+
+        try {
+            const text = await fetchTextResponse(url);
+            textOutput.textContent = text;
+            setStatus("simple_agent 调用完成，可以和 order_assistant 做对比。", "success");
+            addLog("/agent/hello", "成功", "最小 Agent 同步返回文本。");
+        }
+        catch (error) {
+            setStatus("simple_agent 调用失败：" + error.message, "error");
+            addLog("/agent/hello", "失败", error.message);
+        }
+    }
+
+    async function runChat() {
+        return runChatInternal(true);
+    }
+
+    function appendSseChunk(block) {
+        const lines = block.split(/\r?\n/);
+        for (const line of lines) {
+            if (line.startsWith("data:")) {
+                streamOutput.textContent += line.slice(5);
+            }
+        }
+    }
+
+    async function runStream() {
+        return runStreamInternal(true);
+    }
+
+    async function runStreamInternal(allowRecovery) {
+        stopCurrentStream(true);
+        const question = getQuestion(defaultMessages.stream);
+        const sessionId = getSessionId();
+        const url = buildApiUrl("/agent/order/stream?question=" + encodeURIComponent(question) + "&sessionId=" + encodeURIComponent(sessionId));
+
+        streamOutput.textContent = "";
+        currentController = new AbortController();
+        updateStreamControls(true);
+        setStatus("正在接收 order_assistant 的流式响应...", "live");
+
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    Accept: "text/event-stream"
+                },
+                signal: currentController.signal
+            });
+
+            if (!response.ok) {
+                throw createHttpError(response.status, url, await response.text());
+            }
+
+            if (!response.body) {
+                throw new Error("HTTP 200，但响应体为空，请求地址：" + url);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("UTF-8");
+            let buffer = "";
+
+            while (true) {
+                const result = await reader.read();
+                if (result.done) {
+                    break;
+                }
+
+                buffer += decoder.decode(result.value, { stream: true });
+                buffer = buffer.replace(/\r/g, "");
+                let boundaryIndex = buffer.indexOf("\n\n");
+
+                while (boundaryIndex !== -1) {
+                    const block = buffer.slice(0, boundaryIndex);
+                    buffer = buffer.slice(boundaryIndex + 2);
+                    appendSseChunk(block);
+                    boundaryIndex = buffer.indexOf("\n\n");
+                }
+            }
+
+            if (buffer.trim()) {
+                appendSseChunk(buffer);
+            }
+
+            setStatus("流式响应完成。你可以继续用相同 sessionId 查看线程状态。", "success");
+            addLog("/agent/order/stream", "成功", "流式输出已完成，sessionId=" + sessionId + "。");
+        }
+        catch (error) {
+            if (error.name === "AbortError") {
+                setStatus("流式请求已中止。", "success");
+                return;
+            }
+            if (allowRecovery && isCorruptedThreadError(error)) {
+                setStatus("检测到当前会话历史不完整，正在自动重置并重试流式请求...", "live");
+                await resetCurrentThread(true);
+                addLog("/agent/order/reset-thread", "自动重置", "检测到损坏的 tool_calls 历史，已清空当前 sessionId 后自动重试。");
+                return runStreamInternal(false);
+            }
+            setStatus("流式调用失败：" + error.message, "error");
+            addLog("/agent/order/stream", "失败", error.message);
+        }
+        finally {
+            currentController = null;
+            updateStreamControls(false);
+        }
+    }
+
+    async function runChatInternal(allowRecovery) {
+        stopCurrentStream(true);
+        const question = getQuestion(defaultMessages.chat);
+        const sessionId = getSessionId();
+        const url = buildApiUrl("/agent/order/chat?question=" + encodeURIComponent(question) + "&sessionId=" + encodeURIComponent(sessionId));
+        setStatus("正在调用 order_assistant 同步接口...", "live");
+
+        try {
+            const text = await fetchTextResponse(url);
+            textOutput.textContent = text;
+            setStatus("订单同步对话完成。保持同一个 sessionId 可以继续累积上下文。", "success");
+            addLog("/agent/order/chat", "成功", "使用 sessionId=" + sessionId + " 完成一次同步对话。");
+        }
+        catch (error) {
+            if (allowRecovery && isCorruptedThreadError(error)) {
+                setStatus("检测到当前会话历史不完整，正在自动重置并重试同步对话...", "live");
+                await resetCurrentThread(true);
+                addLog("/agent/order/reset-thread", "自动重置", "检测到损坏的 tool_calls 历史，已清空当前 sessionId 后自动重试。");
+                return runChatInternal(false);
+            }
+            setStatus("订单同步对话失败：" + error.message, "error");
+            addLog("/agent/order/chat", "失败", error.message);
+        }
+    }
+
+    async function runSummary() {
+        stopCurrentStream(true);
+        const question = getQuestion(defaultMessages.summary);
+        const url = buildApiUrl("/agent/order/summary?question=" + encodeURIComponent(question));
+        setStatus("正在获取结构化总结...", "live");
+
+        try {
+            const summary = await fetchJsonResponse(url);
+            updateSummaryFields(summary);
+            summaryOutput.textContent = formatJson(summary);
+            setStatus("结构化总结完成。这里可以直接对应 outputType 的讲解。", "success");
+            addLog("/agent/order/summary", "成功", "已返回结构化 JSON 对象。");
+        }
+        catch (error) {
+            setStatus("结构化总结失败：" + error.message, "error");
+            addLog("/agent/order/summary", "失败", error.message);
+        }
+    }
+
+    async function runThreadState() {
+        stopCurrentStream(true);
+        const sessionId = getSessionId();
+        const url = buildApiUrl("/agent/order/thread-state?sessionId=" + encodeURIComponent(sessionId));
+        setStatus("正在读取线程状态...", "live");
+
+        try {
+            const state = await fetchJsonResponse(url);
+            updateThreadStateFields(state);
+            threadStateOutput.textContent = formatJson(state);
+            setStatus("线程状态已刷新。messageCount 越大，说明这个会话累计历史越多。", "success");
+            addLog("/agent/order/thread-state", "成功", "已读取 sessionId=" + sessionId + " 的会话状态。");
+        }
+        catch (error) {
+            setStatus("读取线程状态失败：" + error.message, "error");
+            addLog("/agent/order/thread-state", "失败", error.message);
+        }
+    }
+
+    async function resetCurrentThread(silent) {
+        stopCurrentStream(true);
+        const sessionId = getSessionId();
+        const url = buildApiUrl("/agent/order/reset-thread?sessionId=" + encodeURIComponent(sessionId));
+        const state = await fetchJsonResponse(url);
+        updateThreadStateFields(state);
+        threadStateOutput.textContent = formatJson(state);
+        if (!silent) {
+            setStatus("当前会话已重置。现在可以用同一个 sessionId 重新开始演示。", "success");
+            addLog("/agent/order/reset-thread", "成功", "已清空 sessionId=" + sessionId + " 的内存会话。");
+        }
+        return state;
+    }
+
+    document.getElementById("runHello").addEventListener("click", runHello);
+    document.getElementById("runChat").addEventListener("click", runChat);
+    document.getElementById("runStream").addEventListener("click", runStream);
+    document.getElementById("stopStream").addEventListener("click", function () {
+        stopCurrentStream(false);
+    });
+    document.getElementById("runSummary").addEventListener("click", runSummary);
+    document.getElementById("runThreadState").addEventListener("click", runThreadState);
+    document.getElementById("resetThread").addEventListener("click", function () {
+        resetCurrentThread(false);
+    });
+
+    if (!sessionIdInput.value.trim() || sessionIdInput.value.trim() === "demo-user-1001") {
+        sessionIdInput.value = buildFreshSessionId();
+    }
+
+    scenarioButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+            questionInput.value = button.dataset.question || "";
+            questionInput.focus();
+            setStatus("已填充示例问题，可以直接点击对应的接口动作按钮。", "success");
+        });
+    });
+</script>
+</body>
+</html>

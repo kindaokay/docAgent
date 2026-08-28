@@ -1,0 +1,19 @@
+# 构建产物
+**/target/
+**/node_modules/
+
+# 前端（后端镜像不需要，前端走独立构建上下文 vue/）
+vue/
+
+# 日志
+logs/
+
+# VCS / IDE / 其它
+.git/
+.idea/
+.claude/
+*.iml
+*.log
+.DS_Store
+.flattened-pom.xml
+**/dependency-reduced-pom.xml

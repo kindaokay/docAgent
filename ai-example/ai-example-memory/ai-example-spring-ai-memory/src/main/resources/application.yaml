@@ -1,0 +1,49 @@
+server:
+  port: 8091
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: ai-example-spring-ai-memory
+  ai:
+    openai:
+      base-url: https://api.siliconflow.cn
+      api-key: ${SILICONFLOW_API_KEY}
+      chat:
+        options:
+          model: Qwen/Qwen2.5-7B-Instruct
+      embedding:
+        options:
+          model: Qwen/Qwen3-Embedding-8B
+          dimensions: 1024
+  main:
+    allow-bean-definition-overriding: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+    servlet:
+      load-on-startup: 1
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+logging:
+  level:
+    org.springframework.ai: DEBUG
+
+app:
+  ai:
+    memory:
+      default-system-prompt: >-
+        你是 JavaUp 的 Java 面试辅导助手。
+        回答时优先讲清楚原理，再补充工程上怎么落地。
+        如果用户在后续问题里用了“它”“刚才那个问题”“前面那种情况”这类指代，
+        你要先结合上下文判断它具体指什么，再继续回答。
+      sliding-window:
+        max-rounds: 3
+      summary:
+        token-threshold: 700
+        keep-recent-rounds: 2

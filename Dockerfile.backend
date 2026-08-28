@@ -1,0 +1,28 @@
+# ===== 构建阶段：多模块 Maven 打包 =====
+FROM maven:3.9-eclipse-temurin-17 AS build
+WORKDIR /build
+
+# 复制整个多模块工程（nexus-agent-business-chat 依赖多个同级模块，构建上下文必须是仓库根）
+COPY . .
+
+# 用阿里云镜像加速依赖下载；只构建 chat 模块及其依赖模块，跳过测试和源码 jar
+RUN mvn -s /build/maven/settings.xml \
+        -pl nexus-agent-business/nexus-agent-business-chat \
+        -am clean package \
+        -DskipTests -Dmaven.source.skip=true \
+    && cp nexus-agent-business/nexus-agent-business-chat/target/nexus-agent-business-chat-*.jar /build/app.jar
+
+# ===== 运行阶段 =====
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+
+# curl 供 docker healthcheck 使用
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /build/app.jar app.jar
+
+EXPOSE 9082
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

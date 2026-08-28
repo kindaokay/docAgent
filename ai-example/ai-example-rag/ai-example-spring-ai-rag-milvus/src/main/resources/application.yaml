@@ -1,0 +1,120 @@
+server:
+  port: 7094
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: ai-example-spring-ai-rag-milvus
+  ai:
+    openai:
+      base-url: https://api.siliconflow.cn
+      api-key: ${SILICONFLOW_API_KEY}
+      embedding:
+        options:
+          model: Qwen/Qwen3-Embedding-8B
+          # Embedding 输出维度。
+          # 这个值决定了“每一段文本最终会被表示成多少维的浮点数向量”。
+          # Milvus 中向量字段的维度必须和这里完全一致，否则写入时会因为维度不匹配直接报错。
+          # 当前使用的 Qwen3-Embedding-8B 输出 4096 维，所以这里也配置成 4096。
+          dimensions: 4096
+    vectorstore:
+      milvus:
+        # 是否在应用启动时自动初始化 Milvus。
+        # 打开后，Spring AI 会在启动阶段自动检查 Collection 是否存在，
+        # 不存在时会自动创建 Collection、创建索引，并把 Collection 加载到内存中。
+        initialize-schema: true
+        database-name: default
+        collection-name: knowledge_chunks
+        # Milvus 中向量字段的维度定义。
+        # 它描述的是“数据库里每条向量记录到底有多少维”。
+        # 这个值必须和上面的 Embedding 输出维度严格保持一致，
+        # 否则文本向量写入 Milvus 时会因为长度不一致而失败。
+        embedding-dimension: 4096
+        # 向量索引类型。
+        # 这里选择 HNSW，是因为它在大多数文本检索和 RAG 场景里都比较均衡：
+        # 检索速度快，召回率也高，适合作为默认起步方案。
+        index-type: HNSW
+        # 相似度度量方式。
+        # 文本向量检索里最常用的是 COSINE，也就是余弦相似度。
+        # 它更关注“方向是否接近”，而不是绝对长度，因此通常更适合语义检索场景。
+        metric-type: COSINE
+        # HNSW 建索引时的关键参数。
+        # M 可以理解为“每个向量节点在图里最多保留多少条连接”，
+        # 值越大，通常召回率会更好，但索引更占内存。
+        # efConstruction 可以理解为“建索引时搜索候选邻居的宽度”，
+        # 值越大，索引质量通常更高，但建索引会更慢。
+        # M=16、efConstruction=256 是一个比较常见、比较稳妥的工程默认组合。
+        index-parameters: '{"M":16,"efConstruction":256}'
+        # 是否让 Milvus 自动生成主键。
+        # 这里关闭自动主键，改成由业务代码显式传入 chunkId。
+        # 这么做的好处是后续可以更方便地按 id 删除、按文档重建、做增量更新，
+        # 而不是每次都依赖 Milvus 生成一个不可预期的内部主键。
+        auto-id: false
+        id-field-name: id
+        content-field-name: content
+        metadata-field-name: metadata
+        # 指定真正执行向量检索时使用的字段名。
+        # Spring AI 发起 similaritySearch 时，会默认在这个字段上执行向量相似度匹配。
+        # 如果后续 Collection 中存在多个向量字段，这里必须明确指向真正用于文本检索的那一个。
+        embedding-field-name: embedding
+        client:
+          uri: http://localhost:19530
+  main:
+    allow-bean-definition-overriding: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+    servlet:
+      load-on-startup: 1
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+
+app:
+  milvus:
+    demo:
+      initialize-on-startup: true
+      reset-before-import: true
+      # 默认返回多少条最相似结果。
+      # 在 RAG 场景里，TopK 一般取 3~10 条比较常见：
+      # 取得太少，可能漏掉关键上下文；取得太多，又会挤占后续大模型可用的上下文窗口。
+      top-k: 5
+      similarity-threshold: 0.15
+      # HNSW 检索阶段的搜索宽度。
+      # 这个参数会直接影响“检索时要不要多看一些候选向量再决定最终结果”。
+      # 值越大，通常召回率会更高，结果更稳，但检索耗时也会随之增加。
+      # demo 默认给 64，是一个偏稳妥的起步值，既不会太激进，也不会太保守。
+      default-ef: 64
+  hybrid:
+    milvus:
+      # 原生 Hybrid Search 示例默认不在应用启动时自动初始化。
+      # 这样做是为了避免每次启动都顺手再建一张 Hybrid Collection，影响已有 Milvus demo 的调试节奏。
+      initialize-on-startup: true
+      # 如果你把 initialize-on-startup 改成 true，保留这个开关更适合演示场景：
+      # 每次启动都会先清掉旧数据，再导入一份干净的故障值班手册样例。
+      reset-before-import: true
+      # 原生混合检索使用独立 Collection，避免和 Spring AI VectorStore 默认表结构冲突。
+      collection-name: knowledge_chunks_hybrid
+      max-text-length: 8192
+      # Dense 向量维度必须和上面的 Embedding 输出完全一致。
+      dense-dimension: 4096
+      # Dense 分支这里选 HNSW，是为了尽量贴近当前模块中 Spring AI Milvus 示例的默认工程思路。
+      dense-index-m: 16
+      dense-index-ef-construction: 256
+      # ef 越大，Dense 召回通常越稳，但单次查询开销也会随之上升。
+      dense-search-ef: 64
+      dense-recall-top-k: 12
+      sparse-recall-top-k: 12
+      final-top-k: 5
+      # 稀疏检索枝路的长尾剪枝比例，适当保守一些，能减少 BM25 分支把噪音结果带进融合阶段。
+      drop-ratio-search: 0.15
+      rrf-k: 60
+
+logging:
+  level:
+    org.springframework.ai: DEBUG
+    io.milvus: INFO
